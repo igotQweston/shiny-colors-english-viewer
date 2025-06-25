@@ -1,4 +1,3 @@
-// Import required modules
 const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
@@ -14,18 +13,37 @@ let fetch;
 
 ipcMain.on('fetch-userscript', async (event) => {
     const scriptUrl = 'https://github.com/snowyivu/ShinyColors/raw/gh-pages/ShinyColors.user.js';
+    const cachePath = path.join(__dirname, 'ShinyColors.user.js');
     try {
         const response = await fetch(scriptUrl);
-        if (response.ok) { // Check if the response is successful
+        if (response.ok) {
             const scriptContent = await response.text();
+            // Save to cache
+            try {
+                fs.writeFileSync(cachePath, scriptContent, 'utf8');
+            } catch (err) {
+                // Ignore cache write errors
+            }
             event.sender.send('userscript-fetched', scriptContent);
         } else {
-            console.error('Failed to fetch the userscript:', response.statusText);
-            event.sender.send('userscript-fetch-error', 'Failed to fetch the userscript');
+            // Fetch failed, try cache
+            if (fs.existsSync(cachePath)) {
+                const cachedScript = fs.readFileSync(cachePath, 'utf8');
+                event.sender.send('userscript-fetched', cachedScript);
+            } else {
+                console.error('Failed to fetch the userscript:', response.statusText);
+                event.sender.send('userscript-fetch-error', 'Failed to fetch the userscript');
+            }
         }
     } catch (error) {
-        console.error('Error fetching the userscript:', error);
-        event.sender.send('userscript-fetch-error', error.message);
+        // On error, try cache
+        if (fs.existsSync(cachePath)) {
+            const cachedScript = fs.readFileSync(cachePath, 'utf8');
+            event.sender.send('userscript-fetched', cachedScript);
+        } else {
+            console.error('Error fetching the userscript:', error);
+            event.sender.send('userscript-fetch-error', error.message);
+        }
     }
 });
 
@@ -35,7 +53,7 @@ async function createWindow() {
         height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'game.preload.js'),
-            contextIsolation: false, // <-- set to false for main window too
+            contextIsolation: false,
             nodeIntegration: false,
             webviewTag: true,
         },
