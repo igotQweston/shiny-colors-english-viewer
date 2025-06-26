@@ -19,6 +19,35 @@ A desktop Electron app for viewing and translating [ShinyColors Enza](https://sh
    npm start
    ```
 
+## Building in case you want to
+
+The app uses [Electron Forge](https://www.electronforge.io/) for packaging and distribution.
+
+### Package the app (without installer)
+```sh
+npm run package
+```
+This creates a packaged version of the app in the `out` folder without creating an installer.
+
+### Build distributables
+```sh
+npm run make
+```
+This creates platform-specific distributables:
+- **macOS**: `.zip` archive in `out/make/zip/darwin/`
+- **Windows**: Squirrel installer in `out/make/squirrel.windows/`
+- **Linux**: `.deb` and `.rpm` packages in `out/make/deb/` and `out/make/rpm/`
+
+### Build for specific platforms
+To build for a specific platform, you can use the `--platform` flag:
+```sh
+npx electron-forge make --platform=darwin   # macOS
+npx electron-forge make --platform=win32    # Windows
+npx electron-forge make --platform=linux    # Linux
+```
+
+**Note:** Cross-platform building may have limitations. For best results, build on the target platform.
+
 ## How it works
 
 - Loads the game in a `<webview>` with a preload script.
